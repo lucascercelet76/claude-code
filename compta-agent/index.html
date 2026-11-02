@@ -1,0 +1,452 @@
+<title>Compta Micro-Boutique</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a ledger. One column of sections, summary first, then the journal, then TVA, channels, settings, agent. */
+:root{
+  --bg:#f3f6f5; --surface:#ffffff; --ink:#15211d; --muted:#5b6b65; --line:#d6dfdb;
+  --accent:#17644f; --accent-soft:#e1efe9; --good:#1d7a45; --bad:#b4322c; --warn:#9a6a00;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1513; --surface:#17201d; --ink:#e6eeea; --muted:#9aaba4; --line:#2b3833;
+  --accent:#5cc7a2; --accent-soft:#1c3129; --good:#5fd08e; --bad:#ff7a70; --warn:#e6b84d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1513; --surface:#17201d; --ink:#e6eeea; --muted:#9aaba4; --line:#2b3833;
+  --accent:#5cc7a2; --accent-soft:#1c3129; --good:#5fd08e; --bad:#ff7a70; --warn:#e6b84d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:2rem}
+h2{font-size:1.35rem}
+h3{font-size:1rem}
+.num,td.n,th.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{cursor:pointer;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);padding:7px 14px;font-weight:700}
+button.ghost{background:transparent;color:var(--accent)}
+button.icon{background:transparent;border:none;color:var(--muted);padding:4px 8px;font-weight:400}
+button.icon:hover{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:transparent;color:var(--muted);font-weight:700;padding:7px 12px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+section{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .v{font-family:var(--mono);font-size:1.45rem;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi.hero{background:var(--accent-soft);border-color:var(--accent)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ledger{width:100%;border-collapse:collapse}
+.ledger td,.ledger th{padding:6px 8px;border-bottom:1px dashed var(--line);text-align:left;vertical-align:top}
+.ledger th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ledger td.n,.ledger th.n{text-align:right;white-space:nowrap}
+.ledger tr.total td{border-top:2px solid var(--ink);border-bottom:none;font-weight:700}
+.ledger tr.sub td{color:var(--muted)}
+.scroll{overflow-x:auto}
+form.add{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end}
+form.add .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+form.add .wide{grid-column:span 2}
+@media (max-width:820px){form.add{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.settings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.settings{grid-template-columns:minmax(0,1fr)}}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;min-width:0}
+.gauge{height:10px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.gauge i{display:block;height:100%;background:var(--accent)}
+.gauge.warn i{background:var(--warn)} .gauge.bad i{background:var(--bad)}
+.note{border-left:3px solid var(--accent);padding:4px 0 4px 12px}
+.note.warn{border-color:var(--warn)}
+.chat{display:flex;flex-direction:column;gap:10px}
+.answer{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;min-height:3em;max-height:480px;overflow:auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font-weight:400;font-size:.85rem}
+.status{font-size:.85rem;color:var(--muted)}
+.ex{font-size:.7rem;color:var(--warn);font-weight:700;margin-left:6px}
+ul.tight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.gauge i{transition:width .4s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="label">Micro-entreprise · vente de marchandises</div>
+      <h1>Compta Micro-Boutique</h1>
+      <div class="status" id="status">Chargement de tes données…</div>
+    </div>
+    <div class="controls">
+      <label class="small">Mois <input type="month" id="month"></label>
+      <div class="seg" role="group" aria-label="Régime de TVA">
+        <button type="button" id="reg-franchise" aria-pressed="true">Franchise TVA</button>
+        <button type="button" id="reg-assujetti" aria-pressed="false">Assujetti TVA</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- RÉSUMÉ -->
+  <section>
+    <div class="sec-head"><h2>Ton mois en un coup d'œil</h2><span class="small muted" id="regime-label"></span></div>
+    <div class="kpis">
+      <div class="kpi hero"><span class="label">Reste à la fin du mois</span><span class="v" id="k-reste">—</span><span class="small muted">salaire + bénéfice − dépenses perso</span></div>
+      <div class="kpi"><span class="label">Bénéfice des ventes</span><span class="v" id="k-benef">—</span><span class="small" id="k-benef-sub"></span></div>
+      <div class="kpi"><span class="label">Cotisations URSSAF</span><span class="v" id="k-urssaf">—</span><span class="small muted" id="k-urssaf-sub"></span></div>
+      <div class="kpi"><span class="label">TVA du mois</span><span class="v" id="k-tva">—</span><span class="small muted" id="k-tva-sub"></span></div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Du chiffre d'affaires à ce qui te reste</h3>
+        <div class="scroll"><table class="ledger" id="t-cascade"></table></div>
+      </div>
+      <div class="panel">
+        <h3>Est-ce que tu gagnes de l'argent ?</h3>
+        <div id="verdict"></div>
+        <h3>Seuils de l'année <span class="num" id="year-label"></span></h3>
+        <div id="seuils"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section>
+    <div class="sec-head"><h2>Journal du mois</h2><span class="small muted">ventes, factures Printful, charges, partenariats</span></div>
+    <form class="add" id="f-add">
+      <div class="f"><label class="label" for="a-date">Date</label><input type="date" id="a-date" required></div>
+      <div class="f"><label class="label" for="a-type">Type</label>
+        <select id="a-type">
+          <option value="vente">Vente client</option>
+          <option value="printful">Facture Printful</option>
+          <option value="charge">Autre charge</option>
+          <option value="part_recette">Partenariat (je reçois)</option>
+          <option value="part_depense">Partenariat (je paie)</option>
+        </select></div>
+      <div class="f"><label class="label" for="a-canal">Site / partenaire</label><input id="a-canal" placeholder="Shopify, Etsy…" list="canaux"></div>
+      <div class="f"><label class="label" for="a-montant">Montant TTC (€)</label><input id="a-montant" type="number" step="0.01" min="0" required></div>
+      <div class="f"><label class="label" for="a-tva">TVA sur la facture (€)</label><input id="a-tva" type="number" step="0.01" min="0" placeholder="achats seulement"></div>
+      <div class="f"><label class="label" for="a-lib">Libellé</label><input id="a-lib" placeholder="Commande #1042"></div>
+      <div class="f wide"><button type="submit" id="a-submit">Ajouter au journal</button></div>
+      <div class="f wide small muted" style="grid-column:span 4">Pour une vente, mets le prix payé par le client. Pour un achat (Printful, abonnement…), mets le total payé et la TVA indiquée sur la facture.</div>
+    </form>
+    <datalist id="canaux"></datalist>
+    <div class="panel"><div class="scroll"><table class="ledger" id="t-ops"></table></div>
+      <div class="controls"><button type="button" class="ghost" id="clear-ex" hidden>Supprimer les exemples</button></div>
+    </div>
+  </section>
+
+  <!-- TVA -->
+  <section>
+    <div class="sec-head"><h2>TVA : franchise ou pas ?</h2><span class="small muted">calculé sur le mois choisi</span></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Les deux régimes côte à côte</h3>
+        <div class="scroll"><table class="ledger" id="t-tva"></table></div>
+      </div>
+      <div class="panel">
+        <h3>Ce que ça veut dire pour toi</h3>
+        <div id="tva-explain" class="small"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CANAUX -->
+  <section>
+    <div class="sec-head"><h2>Rentabilité par site et partenariat</h2><span class="small muted">mois choisi</span></div>
+    <div class="panel"><div class="scroll"><table class="ledger" id="t-canaux"></table></div></div>
+  </section>
+
+  <!-- AGENT -->
+  <section>
+    <div class="sec-head"><h2>Ton agent comptable</h2><span class="small muted">répond à partir de tes chiffres</span></div>
+    <div class="panel chat">
+      <div class="chips" id="chips">
+        <button type="button" class="ghost" data-q="Fais le bilan de mon mois : est-ce que je gagne de l'argent, où je perds de la marge, et que faire concrètement ?">Bilan du mois</button>
+        <button type="button" class="ghost" data-q="Est-ce que j'ai intérêt à sortir de la franchise de TVA maintenant ? Compare avec mes chiffres, explique ce que je récupère sur Printful et ce que je devrai facturer.">Sortir de la franchise ?</button>
+        <button type="button" class="ghost" data-q="À quel prix TTC je dois vendre mes produits pour garder la même marge une fois assujetti à la TVA ?">Prix après la TVA</button>
+        <button type="button" class="ghost" data-q="Quelles aides financières je peux demander, avec mon statut de salarié + micro-entrepreneur et mon département ? Donne une liste à vérifier.">Mes aides</button>
+      </div>
+      <textarea id="q" rows="3" placeholder="Pose ta question : « Combien je dois mettre de côté pour l'URSSAF ce trimestre ? »"></textarea>
+      <div class="controls"><button type="button" id="ask">Demander</button><button type="button" class="ghost" id="stop" hidden>Arrêter</button><span class="status" id="ask-status"></span></div>
+      <div class="answer" id="answer">Les réponses de l'agent s'affichent ici.</div>
+    </div>
+  </section>
+
+  <!-- AIDES -->
+  <section>
+    <div class="sec-head"><h2>Aides financières</h2><span class="small muted" id="aides-maj"></span></div>
+    <div class="panel" id="aides"></div>
+  </section>
+
+  <!-- PARAMÈTRES -->
+  <section>
+    <div class="sec-head"><h2>Tes paramètres</h2><span class="small muted" id="save-status"></span></div>
+    <div class="panel">
+      <div class="settings" id="settings">
+        <label>Salaire net du mois (€)<input type="number" step="1" id="p-salaire"></label>
+        <label>Dépenses perso du mois (€)<input type="number" step="1" id="p-perso"></label>
+        <label>Département<input id="p-dep" placeholder="ex. 33 Gironde"></label>
+        <label>Cotisation vente (%)<input type="number" step="0.1" id="p-tv"></label>
+        <label>Cotisation services / partenariats (%)<input type="number" step="0.1" id="p-ts"></label>
+        <label>Taux de TVA (%)<input type="number" step="0.1" id="p-tva"></label>
+        <label>Versement libératoire de l'impôt
+          <select id="p-vl"><option value="non">Non</option><option value="oui">Oui (1 % ventes, 1,7 % services)</option></select></label>
+        <label>ACRE
+          <select id="p-acre"><option value="0">Non</option><option value="50">Oui, créée avant juillet 2026 (−50 %)</option><option value="25">Oui, créée depuis juillet 2026 (−25 %)</option></select></label>
+        <label>Date de passage à la TVA<input type="date" id="p-bascule"></label>
+      </div>
+      <p class="small muted">Les taux par défaut sont ceux de 2026 : 12,3 % + 0,1 % de formation professionnelle sur les ventes, 21,2 % + 0,1 % sur les prestations de services. Vérifie-les sur ton espace URSSAF, ils changent souvent.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const eur = new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'});
+const fmt = v => eur.format(Math.round((v||0)*100)/100);
+const sgn = v => `<span class="${v>=0?'pos':'neg'}">${fmt(v)}</span>`;
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TYPES = {vente:'Vente',printful:'Printful',charge:'Charge',part_recette:'Partenariat reçu',part_depense:'Partenariat payé'};
+const DEFAULTS = {salaire:0,perso:0,dep:'',tauxVente:12.3,tauxServ:21.2,cfpVente:0.1,cfpServ:0.1,tva:20,vl:'non',acre:'0',regime:'franchise',bascule:''};
+const SEUILS = {vente:85000, venteMaj:93500, serv:37500, servMaj:41250, microVente:203100};
+
+let ops = [], params = {...DEFAULTS}, aides = null, db = null, canWrite = false;
+const today = new Date();
+const curMonth = () => $('#month').value || today.toISOString().slice(0,7);
+$('#month').value = today.toISOString().slice(0,7);
+$('#a-date').value = today.toISOString().slice(0,10);
+
+/* ---------- calculs ---------- */
+function compute(list, p, regime){
+  const t = (p.tva||0)/100, ass = regime==='assujetti';
+  const acreF = 1 - (Number(p.acre)||0)/100;
+  const r = {ventesTTC:0,ventesHT:0,partRecHT:0,printful:0,charges:0,partDep:0,tvaColl:0,tvaDed:0,tvaPerdue:0,nbVentes:0};
+  for(const o of list){
+    const m = +o.montant||0, tv = Math.min(+o.tva||0, m);
+    if(o.type==='vente'||o.type==='part_recette'){
+      const ht = ass ? m/(1+t) : m;
+      if(ass) r.tvaColl += m-ht;
+      if(o.type==='vente'){r.ventesTTC+=m; r.ventesHT+=ht; r.nbVentes++;} else r.partRecHT+=ht;
+    } else {
+      const cost = ass ? m-tv : m;
+      if(ass) r.tvaDed += tv; else r.tvaPerdue += tv;
+      if(o.type==='printful') r.printful+=cost; else if(o.type==='charge') r.charges+=cost; else r.partDep+=cost;
+    }
+  }
+  const tvx = (p.tauxVente*acreF + p.cfpVente + (p.vl==='oui'?1:0))/100;
+  const tsx = (p.tauxServ*acreF + p.cfpServ + (p.vl==='oui'?1.7:0))/100;
+  r.urssafVente = r.ventesHT*tvx; r.urssafServ = r.partRecHT*tsx; r.urssaf = r.urssafVente+r.urssafServ;
+  r.ca = r.ventesHT + r.partRecHT;
+  r.couts = r.printful + r.charges + r.partDep;
+  r.benef = r.ca - r.couts - r.urssaf;
+  r.tvaNette = r.tvaColl - r.tvaDed;
+  r.reste = (+p.salaire||0) + r.benef - (+p.perso||0);
+  r.marge = r.ca ? r.benef/r.ca : 0;
+  return r;
+}
+const monthOps = m => ops.filter(o => (o.date||'').slice(0,7)===m);
+const yearOps = y => ops.filter(o => (o.date||'').slice(0,4)===y);
+
+/* ---------- rendu ---------- */
+function render(){
+  const m = curMonth(), reg = params.regime, list = monthOps(m);
+  const r = compute(list, params, reg);
+  $('#reg-franchise').setAttribute('aria-pressed', reg==='franchise');
+  $('#reg-assujetti').setAttribute('aria-pressed', reg==='assujetti');
+  $('#regime-label').textContent = reg==='franchise' ? 'Calculé en franchise de TVA (pas de TVA facturée, rien à récupérer)' : `Calculé comme assujetti à la TVA (${params.tva} %)`;
+
+  $('#k-reste').innerHTML = sgn(r.reste);
+  $('#k-benef').innerHTML = sgn(r.benef);
+  $('#k-benef-sub').innerHTML = r.ca ? `<span class="muted">marge nette ${(r.marge*100).toFixed(1).replace('.',',')} % · ${r.nbVentes} vente${r.nbVentes>1?'s':''}</span>` : '<span class="muted">aucune vente ce mois</span>';
+  $('#k-urssaf').textContent = fmt(r.urssaf);
+  $('#k-urssaf-sub').textContent = 'à mettre de côté pour ta déclaration';
+  if(reg==='franchise'){ $('#k-tva').textContent = fmt(0); $('#k-tva-sub').textContent = `${fmt(r.tvaPerdue)} payés sur tes achats, non récupérables`; }
+  else { $('#k-tva').innerHTML = r.tvaNette>=0 ? `<span class="neg">${fmt(r.tvaNette)}</span>` : `<span class="pos">${fmt(-r.tvaNette)}</span>`; $('#k-tva-sub').textContent = r.tvaNette>=0 ? 'à reverser aux impôts' : 'crédit de TVA en ta faveur'; }
+
+  const row = (l,v,cls='') => `<tr class="${cls}"><td>${l}</td><td class="n">${v}</td></tr>`;
+  $('#t-cascade').innerHTML =
+    row(reg==='assujetti'?'Ventes encaissées (HT)':'Ventes encaissées', fmt(r.ventesHT)) +
+    (r.partRecHT? row('Partenariats reçus'+(reg==='assujetti'?' (HT)':''), fmt(r.partRecHT)):'') +
+    row('− Factures Printful'+(reg==='assujetti'?' (HT)':' (TTC)'), fmt(-r.printful)) +
+    row('− Autres charges', fmt(-r.charges)) +
+    (r.partDep? row('− Partenariats payés', fmt(-r.partDep)):'') +
+    row('− Cotisations URSSAF'+(params.vl==='oui'?' + impôt libératoire':''), fmt(-r.urssaf)) +
+    row('Bénéfice de l\'activité', sgn(r.benef), 'total') +
+    row('+ Salaire net', fmt(+params.salaire||0), 'sub') +
+    row('− Dépenses perso', fmt(-(+params.perso||0)), 'sub') +
+    row('Reste à la fin du mois', sgn(r.reste), 'total');
+
+  let v;
+  if(!list.length) v = `<p class="muted">Ajoute tes ventes et factures du mois dans le journal pour voir le verdict.</p>`;
+  else if(r.benef>0) v = `<p><span class="pill pos">Rentable</span> Tes sites te rapportent <b>${fmt(r.benef)}</b> ce mois-ci après Printful, charges et URSSAF. Sur 100 € encaissés, il te reste <b>${fmt(r.marge*100)}</b>.</p>`;
+  else v = `<p><span class="pill neg">À perte</span> Ce mois-ci tes ventes te coûtent <b>${fmt(-r.benef)}</b>. Regarde le tableau par site plus bas pour trouver où ça coince.</p>`;
+  if(list.length && r.ventesHT) v += `<p class="small muted">Printful représente ${(r.printful/r.ventesHT*100).toFixed(0)} % de tes ventes. En print-on-demand, au-dessus de 60 % la marge devient très fine.</p>`;
+  $('#verdict').innerHTML = v;
+
+  const y = m.slice(0,4), yr = compute(yearOps(y), params, 'franchise');
+  $('#year-label').textContent = y;
+  const g = (lab,val,s,smaj) => { const pct = Math.min(100, val/smaj*100), cls = val>smaj?'bad':val>s?'warn':'';
+    return `<div style="display:flex;flex-direction:column;gap:4px"><div class="small" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>${lab}</span><span class="num">${fmt(val)} / ${fmt(s)}</span></div><div class="gauge ${cls}"><i style="width:${pct}%"></i></div></div>`; };
+  $('#seuils').innerHTML = g('Ventes : seuil de franchise de TVA', yr.ventesHT, SEUILS.vente, SEUILS.venteMaj) +
+    g('Partenariats (services) : seuil de franchise', yr.partRecHT, SEUILS.serv, SEUILS.servMaj) +
+    `<p class="small muted">Tu restes en franchise tant que tu ne dépasses pas ${fmt(SEUILS.vente)} de ventes (${fmt(SEUILS.serv)} pour les services). Au-delà de ${fmt(SEUILS.venteMaj)} (${fmt(SEUILS.servMaj)}), la TVA s'applique dès le jour du dépassement. Tu peux aussi choisir d'y passer avant.</p>`;
+
+  // journal
+  const rows = list.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('#t-ops').innerHTML = `<tr><th>Date</th><th>Type</th><th>Site / partenaire</th><th>Libellé</th><th class="n">TTC</th><th class="n">TVA</th><th></th></tr>` +
+    (rows.length ? rows.map(o=>`<tr><td class="num">${esc((o.date||'').slice(8,10))}/${esc((o.date||'').slice(5,7))}</td><td>${TYPES[o.type]||esc(o.type)}${o.exemple?'<span class="ex">EXEMPLE</span>':''}</td><td>${esc(o.canal)}</td><td>${esc(o.libelle)}</td><td class="n">${fmt(o.montant)}</td><td class="n">${o.tva?fmt(o.tva):'—'}</td><td>${canWrite?`<button type="button" class="icon" data-del="${esc(o.id)}" aria-label="Supprimer">✕</button>`:''}</td></tr>`).join('')
+    : `<tr><td colspan="7" class="muted">Rien ce mois-ci. Ajoute ta première vente avec le formulaire, ou demande à l'agent Claude d'importer tes commandes Shopify et tes factures Printful.</td></tr>`);
+  $('#clear-ex').hidden = !(canWrite && ops.some(o=>o.exemple));
+  $('#canaux').innerHTML = [...new Set(ops.map(o=>o.canal).filter(Boolean))].map(c=>`<option value="${esc(c)}">`).join('');
+
+  // TVA comparatif
+  const f = compute(list, params, 'franchise'), a = compute(list, params, 'assujetti');
+  const tr = (l,x,y2) => `<tr><td>${l}</td><td class="n">${x}</td><td class="n">${y2}</td></tr>`;
+  $('#t-tva').innerHTML = `<tr><th></th><th class="n">Franchise</th><th class="n">Assujetti</th></tr>` +
+    tr('Ventes encaissées (TTC)', fmt(f.ventesTTC), fmt(a.ventesTTC)) +
+    tr('TVA facturée aux clients', fmt(0), fmt(a.tvaColl)) +
+    tr('Chiffre d\'affaires gardé (HT)', fmt(f.ca), fmt(a.ca)) +
+    tr('TVA récupérée sur Printful et charges', fmt(0), fmt(a.tvaDed)) +
+    tr('Coût Printful + charges', fmt(f.couts), fmt(a.couts)) +
+    tr('Cotisations URSSAF', fmt(f.urssaf), fmt(a.urssaf)) +
+    tr('TVA nette à payer', fmt(0), fmt(a.tvaNette)) +
+    `<tr class="total"><td>Bénéfice</td><td class="n">${sgn(f.benef)}</td><td class="n">${sgn(a.benef)}</td></tr>`;
+  const diff = a.benef - f.benef, t = params.tva/100;
+  const hausse = f.ventesTTC ? f.ventesTTC*(1+t) : 0;
+  $('#tva-explain').innerHTML = !list.length ? '<p class="muted">Saisis des ventes et des factures pour comparer.</p>' : `
+    <ul class="tight">
+      <li><b>En franchise</b>, tu ne factures pas de TVA (mention « TVA non applicable, art. 293 B du CGI ») et tu ne récupères pas les ${fmt(f.tvaPerdue)} de TVA payés sur Printful et tes charges ce mois.</li>
+      <li><b>Assujetti</b>, à prix de vente inchangés, ${fmt(a.tvaColl)} de ce que paient tes clients part en TVA. Tu récupères ${fmt(a.tvaDed)} sur tes achats. Résultat : ${diff>=0?`tu gagnes ${fmt(diff)} de plus`:`tu perds ${fmt(-diff)}`} sur le mois.</li>
+      <li>Pour garder le même chiffre d'affaires HT, il faudrait vendre ${fmt(hausse)} TTC au lieu de ${fmt(f.ventesTTC)}, soit +${params.tva} % sur tes prix.</li>
+      <li>Tes clients sont des particuliers : ils ne récupèrent pas la TVA. Passer à la TVA est donc surtout intéressant si tes achats sont gros par rapport à tes ventes, ou si tu dépasses le seuil.</li>
+    </ul>
+    <p class="note warn">Printful : vérifie sur chaque facture l'entité qui facture (Lettonie, Espagne, États-Unis…). Une fois assujetti, donne ton numéro de TVA intracommunautaire (FR + clé + SIREN) dans ton compte Printful : les factures venant d'un pays de l'UE peuvent alors passer en autoliquidation (sans TVA facturée, et tu la déclares toi-même). Fais confirmer le traitement par ton service des impôts des entreprises.</p>`;
+
+  // canaux
+  const by = {};
+  for(const o of list){ const k = o.canal || (o.type==='printful'?'Printful':'Sans site'); (by[k] ||= []).push(o); }
+  const keys = Object.keys(by);
+  $('#t-canaux').innerHTML = `<tr><th>Site / partenaire</th><th class="n">Encaissé</th><th class="n">Coûts</th><th class="n">URSSAF</th><th class="n">Bénéfice</th></tr>` +
+    (keys.length ? keys.map(k=>{const c=compute(by[k],params,reg);return `<tr><td>${esc(k)}</td><td class="n">${fmt(c.ca)}</td><td class="n">${fmt(c.couts)}</td><td class="n">${fmt(c.urssaf)}</td><td class="n">${sgn(c.benef)}</td></tr>`}).join('')
+    : `<tr><td colspan="5" class="muted">Aucune opération ce mois.</td></tr>`) +
+    `<tr><td colspan="5" class="small muted">Astuce : mets le nom du site dans « Site / partenaire » sur tes factures Printful aussi, pour voir la vraie marge de chaque boutique.</td></tr>`;
+
+  renderAides();
+}
+
+function renderAides(){
+  const dep = params.dep ? esc(params.dep) : null;
+  let h = '';
+  if(aides && aides.items && aides.items.length){
+    $('#aides-maj').textContent = aides.maj ? `recherche du ${aides.maj}${aides.departement?' · '+aides.departement:''}` : '';
+    h += `<ul class="tight">${aides.items.map(i=>`<li><b>${esc(i.nom)}</b>${i.niveau?` <span class="pill">${esc(i.niveau)}</span>`:''} : ${esc(i.resume)}${i.eligible?` <span class="small muted">Pour toi : ${esc(i.eligible)}</span>`:''}${i.lien?` <a href="${esc(i.lien)}" target="_blank" rel="noopener">Voir</a>`:''}</li>`).join('')}</ul>`;
+  } else {
+    h += `<p>${dep?`Département : <b>${dep}</b>.`:'Indique ton département dans les paramètres.'} La recherche détaillée des aides locales est faite par l'agent Claude, qui écrit ses résultats ici.</p>`;
+  }
+  h += `<p class="note small">Comme tu es salarié, l'ARCE et l'ACRE (réservées surtout aux demandeurs d'emploi et à certains publics) ne s'appliquent probablement pas à toi. Les pistes réalistes sont plutôt les aides de ta région, les prêts d'honneur à 0 % (Initiative France, Réseau Entreprendre, BGE) et les aides au numérique ou à l'export de la CCI.</p>`;
+  $('#aides').innerHTML = h;
+}
+
+/* ---------- paramètres ---------- */
+const PMAP = {'#p-salaire':'salaire','#p-perso':'perso','#p-dep':'dep','#p-tv':'tauxVente','#p-ts':'tauxServ','#p-tva':'tva','#p-vl':'vl','#p-acre':'acre','#p-bascule':'bascule'};
+function fillParams(){ for(const [s,k] of Object.entries(PMAP)) { const el=$(s); if(document.activeElement!==el) el.value = params[k] ?? ''; } }
+let saveT;
+function saveParams(){
+  clearTimeout(saveT);
+  saveT = setTimeout(async()=>{
+    if(!db||!canWrite) return;
+    try{ await db.doc('config/params').set(params); $('#save-status').textContent='Enregistré'; }
+    catch(e){ $('#save-status').textContent='Pas enregistré : '+(e.code||'erreur'); }
+  }, 600);
+}
+for(const [s,k] of Object.entries(PMAP)){
+  $(s).addEventListener('input', e=>{ const el=e.target; params[k] = el.type==='number' ? (el.value===''?0:+el.value) : el.value; render(); saveParams(); });
+}
+for(const reg of ['franchise','assujetti']) $('#reg-'+reg).addEventListener('click',()=>{ params.regime=reg; render(); saveParams(); });
+$('#month').addEventListener('input', render);
+
+/* ---------- journal ---------- */
+$('#f-add').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const o = {date:$('#a-date').value, type:$('#a-type').value, canal:$('#a-canal').value.trim(), libelle:$('#a-lib').value.trim(),
+    montant:+$('#a-montant').value||0, tva:+$('#a-tva').value||0, source:'manuel', cree:new Date().toISOString()};
+  if(o.type==='vente'||o.type==='part_recette') o.tva = 0;
+  if(!db){ $('#status').textContent='Impossible d\'enregistrer : la base de données n\'est pas disponible dans cette vue.'; return; }
+  $('#a-submit').disabled = true;
+  try{ await db.collection('ops').add(o); $('#a-montant').value=''; $('#a-tva').value=''; $('#a-lib').value=''; $('#month').value=o.date.slice(0,7); }
+  catch(err){ $('#status').textContent='Opération non enregistrée ('+(err.code||'erreur')+'). Réessaie.'; }
+  finally{ $('#a-submit').disabled = false; }
+});
+$('#t-ops').addEventListener('click', async e=>{
+  const id = e.target.closest('[data-del]')?.dataset.del; if(!id||!db) return;
+  try{ await db.collection('ops').doc(id).delete(); } catch(err){ $('#status').textContent='Suppression impossible ('+(err.code||'erreur')+').'; }
+});
+$('#clear-ex').addEventListener('click', async ()=>{
+  for(const o of ops.filter(o=>o.exemple)){ try{ await db.collection('ops').doc(o.id).delete(); }catch(e){} }
+});
+
+/* ---------- agent (sample) ---------- */
+let sample = null, ctl = null;
+function contexte(){
+  const m = curMonth(), list = monthOps(m);
+  const f = compute(list,params,'franchise'), a = compute(list,params,'assujetti'), yr = compute(yearOps(m.slice(0,4)),params,'franchise');
+  const r2 = o => Object.fromEntries(Object.entries(o).map(([k,v])=>[k,typeof v==='number'?Math.round(v*100)/100:v]));
+  return `Tu es l'agent comptable d'un micro-entrepreneur français (vente de marchandises en print-on-demand via Printful, plusieurs sites, partenariats), qui est aussi salarié. Réponds en français simple, tutoie-le, donne des chiffres précis tirés des données, et signale clairement ce qui doit être vérifié auprès de l'URSSAF, du service des impôts des entreprises ou d'un expert-comptable. Pas de jargon sans explication. Règles 2026 à connaître : franchise en base de TVA jusqu'à 85 000 € de ventes (seuil majoré 93 500 €) et 37 500 € de services (41 250 €) ; cotisations micro vente 12,3 % + CFP 0,1 % ; services BIC 21,2 % ; versement libératoire 1 % / 1,7 % ; ACRE réduite à 25 % pour les créations depuis le 1er juillet 2026 ; plafond micro vente 203 100 €. Tu ne peux pas consulter internet : pour les aides locales, propose des pistes à vérifier.
+
+Paramètres : ${JSON.stringify(params)}
+Mois étudié : ${m}
+Résultat du mois en franchise : ${JSON.stringify(r2(f))}
+Résultat du mois si assujetti : ${JSON.stringify(r2(a))}
+Cumul de l'année (franchise) : ${JSON.stringify(r2(yr))}
+Opérations du mois (${list.length}) : ${JSON.stringify(list.slice(0,150).map(o=>({d:o.date,t:o.type,c:o.canal,l:o.libelle,m:o.montant,tva:o.tva})))}
+${aides&&aides.items?'Aides déjà trouvées : '+JSON.stringify(aides.items):''}
+
+Question : `;
+}
+async function ask(q){
+  if(!sample||!q.trim()) return;
+  ctl = new AbortController();
+  $('#ask').disabled = true; $('#stop').hidden = false; $('#ask-status').textContent='L\'agent réfléchit…'; $('#answer').textContent='';
+  try{
+    const {text} = await sample(contexte()+q, {signal:ctl.signal, cache:false, onText:({text})=>{ $('#answer').textContent=text; $('#ask-status').textContent='L\'agent écrit…'; }});
+    $('#answer').textContent = text; $('#ask-status').textContent='';
+  }catch(e){
+    if(e.text) $('#answer').textContent = e.text;
+    $('#ask-status').textContent = e.code==='not_granted' ? 'Tu as refusé l\'accès à Claude pour cette page. Recharge-la pour autoriser.' : e.code==='rate_limited' ? 'Trop de questions d\'affilée. Attends une minute.' : e.code==='aborted' ? 'Arrêté.' : 'L\'agent n\'a pas pu répondre ('+(e.code||'erreur')+').';
+  }finally{ $('#ask').disabled=false; $('#stop').hidden=true; }
+}
+$('#ask').addEventListener('click',()=>ask($('#q').value));
+$('#stop').addEventListener('click',()=>ctl?.abort());
+$('#chips').addEventListener('click',e=>{ const q=e.target.closest('[data-q]')?.dataset.q; if(q){ $('#q').value=q; ask(q); } });
+
+/* ---------- démarrage ---------- */
+fillParams(); render();
+(async()=>{
+  const [dbNs, userNs, sampleNs] = await Promise.all([claude.use('db'), claude.use('user'), claude.use('sample')]);
+  sample = sampleNs;
+  if(!sample){ $('#ask').disabled = true; $('#ask-status').textContent='L\'agent n\'est pas disponible dans cette vue.'; }
+  if(!dbNs){ $('#status').textContent='Connecte-toi à claude.ai pour retrouver tes données.'; return; }
+  db = dbNs;
+  canWrite = userNs ? (userNs.canEdit ? await userNs.canEdit() : true) : true;
+  if(!canWrite) { $('#f-add').hidden = true; $('#settings').querySelectorAll('input,select').forEach(el=>el.disabled=true); }
+  const timer = setTimeout(()=>{ $('#status').textContent='Tes données mettent du temps à arriver. Vérifie ta connexion.'; },10000);
+  db.collection('ops').onSnapshot(s=>{ clearTimeout(timer); ops = s.docs.map(d=>({id:d.id,...d.data()})); $('#status').textContent = `${ops.length} opération${ops.length>1?'s':''} enregistrée${ops.length>1?'s':''}`; render(); },
+    e=>{ clearTimeout(timer); $('#status').textContent='Impossible de lire tes données ('+e.code+').'; });
+  db.doc('config/params').onSnapshot(s=>{ const d=s.data(); if(d){ params={...DEFAULTS,...d}; fillParams(); render(); } });
+  db.doc('config/aides').onSnapshot(s=>{ aides = s.data()||null; renderAides(); });
+})();
+</script>
